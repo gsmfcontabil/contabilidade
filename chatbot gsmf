@@ -1,0 +1,67 @@
+# Backend do Assistente GSMF Contábil — versão Netlify
+
+Proxy serverless que protege sua chave de API da Anthropic. O widget do site
+chama este backend (não a API da Anthropic diretamente), e é o backend quem
+guarda a chave em segredo e responde ao navegador.
+
+## Opção A — Deploy via GitHub (recomendado, fica com atualização automática)
+
+1. **Crie uma conta** em https://netlify.com (pode entrar com GitHub).
+
+2. **Suba esta pasta para um repositório no GitHub**
+   - Crie um repositório novo (ex: `gsmf-assistente-netlify`)
+   - Envie esta pasta inteira (`netlify.toml`, `netlify/`, `assistente_gsmf_prototipo.html`, etc.)
+
+3. **No painel do Netlify:** "Add new site" → "Import an existing project" → conecte o GitHub → selecione o repositório
+   - Build command: deixe em branco
+   - Publish directory: `.` (já vem configurado no `netlify.toml`)
+
+4. **Configure as variáveis de ambiente** (Site settings → Environment variables):
+   - `ANTHROPIC_API_KEY` → sua chave, gerada em https://console.anthropic.com/settings/keys
+   - `ALLOWED_ORIGIN` → o domínio do site do GSMF (ex: `https://gsmfcontabil.com.br`)
+   - `CLAUDE_MODEL` → opcional, já vem com `claude-sonnet-5` como padrão
+
+5. **Deploy** — o Netlify te dá uma URL, algo como:
+   `https://gsmf-assistente.netlify.app`
+
+6. **O endpoint do chat fica em:**
+   `https://gsmf-assistente.netlify.app/api/chat`
+   (o `netlify.toml` já redireciona isso pra função automaticamente)
+
+## Opção B — Deploy manual (arrastar e soltar, sem GitHub)
+
+1. Crie uma conta em https://netlify.com
+2. Vá em "Add new site" → "Deploy manually"
+3. Arraste a pasta `gsmf-assistente-netlify` inteira pra área de upload
+   - **Atenção:** o deploy manual (drag and drop) não publica funções automaticamente
+     na maioria dos planos — se isso acontecer, use a Opção A (GitHub) ou instale a
+     CLI do Netlify (`npm install -g netlify-cli` e depois `netlify deploy`), que
+     lida melhor com funções.
+4. Configure as variáveis de ambiente do mesmo jeito do passo 4 acima
+
+## Testando localmente (opcional)
+
+```bash
+npm install -g netlify-cli
+netlify dev
+```
+
+Isso sobe o backend em `http://localhost:8888/api/chat` para testes, lendo
+as variáveis do arquivo `.env` (copie o `.env.example` para `.env` e preencha).
+
+## Atualize o widget
+
+No arquivo `assistente_gsmf_prototipo.html`, troque a constante `API_ENDPOINT`
+pela URL real que o Netlify te deu, incluindo `/api/chat` no final.
+
+## Custos
+
+Você paga apenas pelo uso da API da Anthropic (por token). O plano gratuito
+do Netlify cobre tranquilamente o volume de um chat de atendimento de um
+escritório de contabilidade (125 mil execuções de função/mês no plano free).
+
+## Segurança
+
+- A chave de API nunca aparece no código do site — fica só no servidor
+- `ALLOWED_ORIGIN` impede que outros sites usem seu backend (e sua cota) de graça
+- O backend limita o tamanho do histórico e das mensagens para evitar custo alto por request
